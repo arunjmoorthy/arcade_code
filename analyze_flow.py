@@ -161,11 +161,11 @@ class FlowAnalyzer:
         
         prompt = f"""Analyze this Arcade flow and provide a summary.
 
-Flow: {flow_name}
-Actions: {action_list}
+        Flow: {flow_name}
+        Actions: {action_list}
 
-Provide: 1) What the user was trying to accomplish, 2) Key steps taken, 3) Behavioral insights.
-Write in a friendly, professional tone."""
+        Provide: 1) What the user was trying to accomplish, 2) Key steps taken, 3) Behavioral insights.
+        Write in a friendly, professional tone."""
         
         print("Generating summary with GPT-4...")
         response = client.chat.completions.create(
@@ -207,9 +207,9 @@ Write in a friendly, professional tone."""
         if not image_url:
             prompt = f"""Create a modern social media image for: {flow_name}
             
-Show: Clean e-commerce interface, shopping journey (search bar, products, cart), 
-vibrant colors (blues, reds, whites), user interactions, professional look.
-No text in image. Style: Modern, minimal, engaging."""
+            Show: Clean e-commerce interface, shopping journey (search bar, products, cart), 
+            vibrant colors (blues, reds, whites), user interactions, professional look.
+            No text in image. Style: Modern, minimal, engaging."""
             
             print("Generating image with DALL-E...")
             response = client.images.generate(
@@ -250,20 +250,21 @@ No text in image. Style: Modern, minimal, engaging."""
         flow_name = self.flow_data.get('name', 'Unknown Flow')
         report = f"""# Arcade Flow Analysis Report
 
-**Flow Name:** {flow_name}
-**Generated:** {datetime.now().strftime('%B %d, %Y at %I:%M %p')}
+            **Flow Name:** {flow_name}
+            **Generated:** {datetime.now().strftime('%B %d, %Y at %I:%M %p')}
 
----
+            ---
 
-## Overview
+            ## Overview
 
-{summary}
+            {summary}
 
----
+            ---
 
-## User Interactions
+            ## User Interactions
 
-"""
+        """
+
         for i, interaction in enumerate(interactions, 1):
             report += f"{i}. **{interaction['action']}**\n"
             if interaction.get('details'):
@@ -272,30 +273,30 @@ No text in image. Style: Modern, minimal, engaging."""
         
         report += f"""---
 
-## Key Insights
+        ## Key Insights
 
-This flow demonstrates a user journey where the user:
-- Navigated through the interface
-- Interacted with various elements
-- Completed their intended task
+        This flow demonstrates a user journey where the user:
+        - Navigated through the interface
+        - Interacted with various elements
+        - Completed their intended task
 
-The flow showcases an intuitive user experience with clear interactions at each step.
+        The flow showcases an intuitive user experience with clear interactions at each step.
 
----
+        ---
 
-## Social Media Image
+        ## Social Media Image
 
-![Flow Social Media Image](./{image_filename})
+        ![Flow Social Media Image](./{image_filename})
 
 
-## Flow Statistics
+        ## Flow Statistics
 
-- **Total Steps:** {len(self.flow_data.get('steps', []))}
-- **User Interactions:** {len(interactions)}
-- **Flow Type:** {self.flow_data.get('useCase', 'Unknown')}
+        - **Total Steps:** {len(self.flow_data.get('steps', []))}
+        - **User Interactions:** {len(interactions)}
+        - **Flow Type:** {self.flow_data.get('useCase', 'Unknown')}
 
----
-"""
+        ---
+        """
         return report
 
 
