@@ -1,8 +1,8 @@
 # Arcade Flow Analyzer
 
-A Python tool that analyzes Arcade flow recordings and generates comprehensive reports with AI-powered insights.
+A Python tool that analyzes flow recordings and generates comprehensive reports with insights.
 
-## 🌟 Features
+## Features
 
 - **User Interaction Analysis**: Extracts and lists all user actions in human-readable format
 - **AI-Powered Summaries**: Uses GPT-4 to generate clear, engaging summaries of user flows
@@ -10,7 +10,7 @@ A Python tool that analyzes Arcade flow recordings and generates comprehensive r
 - **Smart Caching**: Implements intelligent caching to minimize API costs during development
 - **Markdown Reports**: Generates professional markdown reports with all insights
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Prerequisites
 
@@ -45,7 +45,7 @@ The script will:
 4. Create a social media image
 5. Output everything to `FLOW_REPORT.md`
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 arcade/
@@ -58,7 +58,7 @@ arcade/
 └── flow_social_media_*.png # Generated image
 ```
 
-## 💰 Cost Management
+## Cost Management
 
 The script implements intelligent caching for API responses:
 - **GPT-4 Summaries**: Cached based on flow content
@@ -66,16 +66,7 @@ The script implements intelligent caching for API responses:
 
 This significantly reduces costs during development and testing.
 
-## 🔒 Security
-
-**Important**: Never commit your API keys! 
-
-The `.gitignore` file is configured to exclude:
-- `.env` files
-- Cache directories
-- Generated images (except the final ones)
-
-## 📊 Output
+## Output
 
 The script generates:
 1. **FLOW_REPORT.md**: A comprehensive markdown report containing:
@@ -85,9 +76,9 @@ The script generates:
    - Social media image
    - Flow statistics
 
-2. **Social Media Image**: A professional image suitable for sharing on platforms like LinkedIn, Twitter, etc.
+2. **Social Media Image**: A professional image suitable for sharing on social media.
 
-## 🛠️ How It Works
+## How It Works
 
 1. **Parse Flow Data**: Reads and parses the Arcade flow JSON
 2. **Extract Interactions**: Identifies user actions (clicks, typing, scrolling)
@@ -95,33 +86,10 @@ The script generates:
 4. **Create Visuals**: Generates engaging images with DALL-E
 5. **Compile Report**: Assembles everything into a markdown document
 
-## 📝 Example Output
-
-The tool analyzes flows like:
-- E-commerce shopping journeys
-- Product demos
-- Tutorial walkthroughs
-- User onboarding flows
-
-And generates clear, shareable reports perfect for:
-- Product documentation
-- User guides
-- Marketing materials
-- Social media content
-
-## 🔧 Customization
+## Customization
 
 You can customize the analysis by modifying:
 - `extract_user_interactions()`: Change how interactions are parsed
 - `generate_summary()`: Adjust the GPT-4 prompt
 - `generate_social_media_image()`: Customize the DALL-E prompt
 - `generate_report()`: Modify the report format
-
-## 📜 License
-
-This project is created as part of the Arcade AI Interview Challenge.
-
-## 🤝 Contributing
-
-This is an interview project, but feel free to fork and adapt for your own use!
-

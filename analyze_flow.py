@@ -1,9 +1,3 @@
-#!/usr/bin/env python3
-"""
-Arcade Flow Analyzer
-Analyzes Arcade flow recordings and generates comprehensive reports.
-"""
-
 import json
 import os
 import sys
@@ -13,242 +7,211 @@ import hashlib
 from datetime import datetime
 from dotenv import load_dotenv
 from openai import OpenAI
+import requests
 
-# Load environment variables
 load_dotenv()
-
-# Initialize OpenAI client
 client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
-
-# Cache directory
 CACHE_DIR = Path('.cache')
 CACHE_DIR.mkdir(exist_ok=True)
 
 
-class CacheManager:
-    """Manages caching of expensive API responses."""
-    
-    @staticmethod
-    def get_cache_key(data: Any) -> str:
-        """Generate a cache key from data."""
-        json_str = json.dumps(data, sort_keys=True)
-        return hashlib.md5(json_str.encode()).hexdigest()
-    
-    @staticmethod
-    def get_cached(cache_key: str) -> Any:
-        """Retrieve cached data."""
-        cache_file = CACHE_DIR / f"{cache_key}.json"
-        if cache_file.exists():
-            with open(cache_file, 'r') as f:
-                return json.load(f)
-        return None
-    
-    @staticmethod
-    def set_cache(cache_key: str, data: Any):
-        """Store data in cache."""
-        cache_file = CACHE_DIR / f"{cache_key}.json"
-        with open(cache_file, 'w') as f:
-            json.dump(data, f, indent=2)
+def get_cache_key(data: Any) -> str:
+    """Generate a unique cache key from data."""
+    return hashlib.md5(json.dumps(data, sort_keys=True).encode()).hexdigest()
+
+
+def get_cached(key: str) -> Any:
+    """Get cached data if it exists."""
+    cache_file = CACHE_DIR / f"{key}.json"
+    if cache_file.exists():
+        return json.load(open(cache_file))
+    return None
+
+
+def set_cache(key: str, data: Any):
+    """Save data to cache."""
+    cache_file = CACHE_DIR / f"{key}.json"
+    json.dump(data, open(cache_file, 'w'), indent=2)
 
 
 class FlowAnalyzer:
-    """Analyzes Arcade flow recordings."""
-    
     def __init__(self, flow_path: str):
-        """Initialize with path to flow.json."""
-        with open(flow_path, 'r') as f:
+        with open(flow_path) as f:
             self.flow_data = json.load(f)
-        self.cache = CacheManager()
     
     def extract_user_interactions(self) -> List[Dict[str, Any]]:
-        """Extract human-readable user interactions from the flow."""
+        """Extract all user interactions from the flow."""
         interactions = []
-        steps = self.flow_data.get('steps', [])
         
-        for step in steps:
-            step_type = step.get('type')
-            
-            if step_type == 'CHAPTER':
-                # Chapter steps are navigational/informational
-                title = step.get('title', '')
-                if title and 'thank you' not in title.lower():
-                    interactions.append({
-                        'type': 'chapter',
-                        'action': f"Started section: {title}",
-                        'details': step.get('subtitle', '')
-                    })
-            
-            elif step_type == 'IMAGE':
-                # IMAGE steps typically represent user clicks
-                click_context = step.get('clickContext', {})
-                page_context = step.get('pageContext', {})
-                hotspots = step.get('hotspots', [])
-                
-                element_text = click_context.get('text', '')
-                element_type = click_context.get('elementType', '')
-                url = page_context.get('url', '')
-                
-                # Generate human-readable action
-                action = self._generate_action_description(
-                    element_text, element_type, click_context, page_context, hotspots
-                )
-                
-                if action:
-                    interactions.append({
-                        'type': 'click',
-                        'action': action,
-                        'url': url,
-                        'element_type': element_type
-                    })
-            
-            elif step_type == 'VIDEO':
-                # Video steps show user interactions in motion (typing, scrolling, etc.)
-                # We can infer from captured events
-                pass
+        # Process all steps (can be any type: CHAPTER, IMAGE, VIDEO, etc.)
+        for step in self.flow_data.get('steps', []):
+            step_type = step.get('type', '')
+            action = self._extract_action_from_step(step, step_type)
+            if action:
+                interactions.append(action)
         
-        # Also extract from captured events
-        events = self.flow_data.get('capturedEvents', [])
-        for event in events:
-            event_type = event.get('type')
-            if event_type == 'typing':
-                interactions.append({
-                    'type': 'typing',
-                    'action': 'Typed search query',
-                    'details': 'User entered text in search field'
-                })
-            elif event_type == 'scrolling':
-                interactions.append({
-                    'type': 'scroll',
-                    'action': 'Scrolled page to view more content',
-                    'details': 'User browsed through available options'
-                })
+        # Process captured events (typing, scrolling, dragging, etc.)
+        for event in self.flow_data.get('capturedEvents', []):
+            action = self._extract_action_from_event(event)
+            if action:
+                interactions.append(action)
         
         return interactions
     
-    def _generate_action_description(
-        self, text: str, element_type: str, click_context: Dict, 
-        page_context: Dict, hotspots: List
-    ) -> str:
-        """Generate a human-readable description of an action."""
+    def _extract_action_from_step(self, step: Dict, step_type: str) -> Dict[str, Any]:
+        """Extract action description from any step type."""
+        # Handle CHAPTER steps
+        if step_type == 'CHAPTER':
+            title = step.get('title', '')
+            if title and 'thank you' not in title.lower():
+                return {
+                    'type': 'chapter',
+                    'action': f"Started section: {title}",
+                    'details': step.get('subtitle', '')
+                }
         
-        # Get hotspot label if available (usually most descriptive)
-        if hotspots:
-            hotspot_label = hotspots[0].get('label', '')
-            if hotspot_label:
-                # Clean up the hotspot label for readability
-                return hotspot_label.replace('*', '').strip()
+        # Handle IMAGE steps (usually represent clicks)
+        elif step_type == 'IMAGE':
+            hotspots = step.get('hotspots', [])
+            click_context = step.get('clickContext', {})
+            
+            # Use hotspot label if available (most descriptive)
+            if hotspots and hotspots[0].get('label'):
+                return {
+                    'type': 'click',
+                    'action': hotspots[0]['label'].replace('*', '').strip(),
+                    'url': step.get('pageContext', {}).get('url', '')
+                }
+            
+            # Fallback to click context
+            text = click_context.get('text', '')
+            element_type = click_context.get('elementType', '')
+            if text or element_type:
+                action_text = f"Clicked {element_type}: {text}" if text else f"Clicked {element_type}"
+                return {
+                    'type': 'click',
+                    'action': action_text.strip(),
+                    'url': step.get('pageContext', {}).get('url', '')
+                }
         
-        # Fallback to generating from context
-        if element_type == 'button':
-            if 'cart' in text.lower():
-                return f"Clicked '{text}' button"
-            return f"Clicked the '{text}' button"
+        # Handle VIDEO steps (user interactions in motion)
+        elif step_type == 'VIDEO':
+            # Video steps show motion, details come from captured events
+            return None
         
-        elif element_type == 'image':
-            if text:
-                return f"Clicked on '{text}' image"
-            return "Clicked on product image"
+        # Handle any other step types generically
+        else:
+            # Try to extract meaningful info from any step
+            if step.get('title'):
+                return {
+                    'type': step_type.lower(),
+                    'action': f"Interacted with {step_type}: {step.get('title')}",
+                    'details': step.get('subtitle', '')
+                }
         
-        elif element_type == 'link':
-            if 'cart' in text.lower():
-                return "Clicked on shopping cart icon to view cart"
-            return f"Clicked link: {text}"
+        return None
+    
+    def _extract_action_from_event(self, event: Dict) -> Dict[str, Any]:
+        """Extract action from captured events."""
+        event_type = event.get('type', '')
         
-        elif element_type == 'other' and 'search' in text.lower():
-            return "Clicked the search bar to start looking for products"
+        if event_type == 'typing':
+            return {
+                'type': 'typing',
+                'action': 'Typed search query',
+                'details': 'User entered text in search field'
+            }
+        elif event_type == 'scrolling':
+            return {
+                'type': 'scroll',
+                'action': 'Scrolled page to view more content',
+                'details': 'User browsed through available options'
+            }
+        elif event_type == 'dragging':
+            return {
+                'type': 'drag',
+                'action': 'Dragged element',
+                'details': 'User performed drag interaction'
+            }
+        elif event_type == 'click':
+            return {
+                'type': 'click',
+                'action': 'Clicked on page',
+                'details': 'User performed click interaction'
+            }
         
-        return f"Interacted with {text}" if text else "Performed an action"
+        return None
     
     def generate_summary(self, interactions: List[Dict[str, Any]]) -> str:
-        """Generate a human-friendly summary using GPT-4."""
-        
-        # Create cache key
-        cache_key = self.cache.get_cache_key({
+        """Generate summary using GPT-4 (with caching)."""
+        cache_key = get_cache_key({
             'task': 'summary',
             'flow_name': self.flow_data.get('name', ''),
             'interactions': interactions
         })
         
-        # Check cache
-        cached = self.cache.get_cached(cache_key)
+        cached = get_cached(cache_key)
         if cached:
-            print("📦 Using cached summary")
+            print("Using cached summary")
             return cached['summary']
         
-        # Prepare context for GPT
+        # Build prompt
         flow_name = self.flow_data.get('name', 'Unknown Flow')
-        interaction_list = "\n".join([
-            f"{i+1}. {interaction['action']}"
-            for i, interaction in enumerate(interactions)
-        ])
+        action_list = "\n".join([f"{idx+1}. {interaction['action']}" for idx, interaction in enumerate(interactions)])
         
-        prompt = f"""Analyze this user flow recording from Arcade and provide a comprehensive summary.
+        prompt = f"""Analyze this Arcade flow and provide a summary.
 
-Flow Name: {flow_name}
+Flow: {flow_name}
+Actions: {action_list}
 
-User Actions:
-{interaction_list}
-
-Please provide:
-1. A clear, 2-3 sentence summary of what the user was trying to accomplish
-2. The key steps they took to achieve this goal
-3. Any notable patterns or insights about their behavior
-
-Write in a friendly, professional tone suitable for a product demo or tutorial."""
+Provide: 1) What the user was trying to accomplish, 2) Key steps taken, 3) Behavioral insights.
+Write in a friendly, professional tone."""
         
-        print("🤖 Generating summary with GPT-4...")
+        print("Generating summary with GPT-4...")
         response = client.chat.completions.create(
             model="gpt-4-turbo-preview",
             messages=[
-                {"role": "system", "content": "You are an expert at analyzing user behavior and creating clear, engaging summaries of user flows."},
+                {"role": "system", "content": "Expert at analyzing user behavior and creating clear summaries."},
                 {"role": "user", "content": prompt}
             ],
-            temperature=0.7,
-            max_tokens=500
+            temperature=0.3,
         )
         
         summary = response.choices[0].message.content.strip()
-        
-        # Cache the result
-        self.cache.set_cache(cache_key, {'summary': summary})
-        
+        set_cache(cache_key, {'summary': summary})
         return summary
     
     def generate_social_media_image(self, summary: str) -> str:
-        """Generate a creative social media image using DALL-E."""
-        
+        """Generate social media image using DALL-E (with caching)."""
         flow_name = self.flow_data.get('name', 'Arcade Flow')
+        cache_key = get_cache_key({'task': 'image', 'flow_name': flow_name, 'summary': summary})
         
-        # Create cache key
-        cache_key = self.cache.get_cache_key({
-            'task': 'image',
-            'flow_name': flow_name,
-            'summary': summary
-        })
+        # Check cache and verify URL still works (DALL-E URLs expire after 24 hours)
+        cached = get_cached(cache_key)
+        image_url = None
         
-        # Check cache
-        cached = self.cache.get_cached(cache_key)
         if cached:
-            print("📦 Using cached image URL")
-            image_url = cached['image_url']
-        else:
-            # Generate image with DALL-E
-            prompt = f"""Create a modern, eye-catching social media image for a product tutorial.
-
-Theme: {flow_name}
-
-The image should:
-- Feature a clean, modern e-commerce interface design
-- Show a shopping journey with visual elements like a search bar, product cards, and a shopping cart
-- Use a vibrant color scheme with blues, reds, and whites (Target brand colors)
-- Include abstract representations of user interactions (clicks, selections)
-- Have a professional, engaging look suitable for social media
-- Show the concept of online shopping made easy
-- No text in the image
-
-Style: Modern, minimal, professional, engaging, suitable for LinkedIn or Twitter"""
+            print("Checking cached image URL...")
+            # Test if cached URL is still valid
+            try:
+                test_response = requests.head(cached['image_url'], timeout=5)
+                if test_response.status_code == 200:
+                    print("Using cached image URL")
+                    image_url = cached['image_url']
+                else:
+                    print("Cached URL expired, generating new image...")
+            except:
+                print("Cached URL expired, generating new image...")
+        
+        # Generate new image if no valid cache
+        if not image_url:
+            prompt = f"""Create a modern social media image for: {flow_name}
             
-            print("🎨 Generating social media image with DALL-E...")
+Show: Clean e-commerce interface, shopping journey (search bar, products, cart), 
+vibrant colors (blues, reds, whites), user interactions, professional look.
+No text in image. Style: Modern, minimal, engaging."""
+            
+            print("Generating image with DALL-E...")
             response = client.images.generate(
                 model="dall-e-3",
                 prompt=prompt,
@@ -256,150 +219,111 @@ Style: Modern, minimal, professional, engaging, suitable for LinkedIn or Twitter
                 quality="standard",
                 n=1
             )
-            
             image_url = response.data[0].url
-            
-            # Cache the result
-            self.cache.set_cache(cache_key, {'image_url': image_url})
+            set_cache(cache_key, {'image_url': image_url})
         
-        # Download the image
-        import requests
+        # Download image
+        filename = f"flow_social_media_{datetime.now().strftime('%Y%m%d_%H%M%S')}.png"
+        print(f"Downloading to {filename}...")
+        response = requests.get(image_url)
         
-        image_filename = f"flow_social_media_{datetime.now().strftime('%Y%m%d_%H%M%S')}.png"
+        # Verify we got an actual image, not an error
+        if response.status_code != 200 or response.headers.get('content-type', '').startswith('text/'):
+            raise Exception("Failed to download image - URL may have expired")
         
-        print(f"💾 Downloading image to {image_filename}...")
-        img_data = requests.get(image_url).content
-        with open(image_filename, 'wb') as f:
-            f.write(img_data)
-        
-        return image_filename
+        with open(filename, 'wb') as f:
+            f.write(response.content)
+        return filename
     
     def generate_report(self) -> str:
-        """Generate comprehensive markdown report."""
-        
-        print("\n🔍 Analyzing flow...")
+        """Generate markdown report."""
+        print("Analyzing flow...")
         interactions = self.extract_user_interactions()
         
-        print("📝 Generating summary...")
+        print("Generating summary...")
         summary = self.generate_summary(interactions)
         
-        print("🖼️  Creating social media image...")
+        print("Creating social media image...")
         image_filename = self.generate_social_media_image(summary)
         
-        # Generate markdown report
+        # Build report
         flow_name = self.flow_data.get('name', 'Unknown Flow')
-        flow_description = self.flow_data.get('description', 'No description available')
-        
         report = f"""# Arcade Flow Analysis Report
 
 **Flow Name:** {flow_name}
-
 **Generated:** {datetime.now().strftime('%B %d, %Y at %I:%M %p')}
 
 ---
 
-## 📊 Overview
+## Overview
 
 {summary}
 
 ---
 
-## 👆 User Interactions
-
-The following actions were performed during this flow:
+## User Interactions
 
 """
-        
-        # Add interactions
         for i, interaction in enumerate(interactions, 1):
-            action = interaction['action']
-            report += f"{i}. **{action}**\n"
-            
+            report += f"{i}. **{interaction['action']}**\n"
             if interaction.get('details'):
                 report += f"   - _{interaction['details']}_\n"
-            
             report += "\n"
         
         report += f"""---
 
-## 🎯 Key Insights
+## Key Insights
 
-This flow demonstrates a typical e-commerce user journey on Target.com. The user successfully:
+This flow demonstrates a user journey where the user:
+- Navigated through the interface
+- Interacted with various elements
+- Completed their intended task
 
-- Navigated to the website and used the search functionality
-- Browsed through product listings to find the right item
-- Viewed product details and explored customization options (colors)
-- Made a purchase decision and added the item to their cart
-- Handled optional add-ons (protection plan)
-- Completed the add-to-cart process
-
-The flow showcases a smooth, intuitive shopping experience with clear calls-to-action at each step.
+The flow showcases an intuitive user experience with clear interactions at each step.
 
 ---
 
-## 🖼️ Social Media Image
+## Social Media Image
 
 ![Flow Social Media Image](./{image_filename})
 
-*Generated image suitable for sharing on social platforms*
 
----
-
-## 📈 Flow Statistics
+## Flow Statistics
 
 - **Total Steps:** {len(self.flow_data.get('steps', []))}
 - **User Interactions:** {len(interactions)}
 - **Flow Type:** {self.flow_data.get('useCase', 'Unknown')}
-- **Created With:** {self.flow_data.get('createdWith', 'Unknown')}
 
 ---
-
-## 🔗 Resources
-
-- **Original Flow:** [View on Arcade](https://app.arcade.software/share/{self.flow_data.get('uploadId', '')})
-
----
-
-*Report generated by Arcade Flow Analyzer*
 """
-        
         return report
 
 
 def main():
     """Main entry point."""
-    
-    print("🚀 Arcade Flow Analyzer")
+    print("Arcade Flow Analyzer")
     print("=" * 50)
     
-    # Check for API key
     if not os.getenv('OPENAI_API_KEY'):
-        print("❌ Error: OPENAI_API_KEY not found in environment variables")
-        print("Please create a .env file with your OpenAI API key")
+        print("Error: OPENAI_API_KEY not found. Create a .env file with your API key.")
         sys.exit(1)
     
-    # Check for flow.json
-    flow_path = 'flow.json'
-    if not os.path.exists(flow_path):
-        print(f"❌ Error: {flow_path} not found")
+    if not os.path.exists('flow.json'):
+        print("Error: flow.json not found")
         sys.exit(1)
     
     try:
-        # Analyze flow
-        analyzer = FlowAnalyzer(flow_path)
+        analyzer = FlowAnalyzer('flow.json')
         report = analyzer.generate_report()
         
-        # Save report
-        report_filename = 'FLOW_REPORT.md'
-        with open(report_filename, 'w') as f:
+        with open('FLOW_REPORT.md', 'w') as f:
             f.write(report)
         
-        print(f"\n✅ Analysis complete!")
-        print(f"📄 Report saved to: {report_filename}")
-        print(f"\n🎉 All done! You can now commit these files to your repository.")
+        print("\nAnalysis complete!")
+        print("Report saved to: FLOW_REPORT.md")
         
     except Exception as e:
-        print(f"\n❌ Error: {e}")
+        print(f"\nError: {e}")
         import traceback
         traceback.print_exc()
         sys.exit(1)

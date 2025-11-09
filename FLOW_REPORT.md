@@ -1,29 +1,40 @@
 # Arcade Flow Analysis Report
 
 **Flow Name:** Add a Scooter to Your Cart on Target.com
-
-**Generated:** November 08, 2025 at 11:20 PM
-
----
-
-## 📊 Overview
-
-In this user journey on Target.com, the user aimed to find and add a scooter to their shopping cart, reflecting a clear intent to possibly purchase this item. Starting with a search for scooters, the user engaged with the product by exploring its features, reviewing color options, and ultimately adding their chosen scooter to the cart. They also made a decision regarding a protection plan, opting not to add coverage at this time, before proceeding to review their cart, likely in preparation for checkout.
-
-Key steps in their process included:
-1. Utilizing the search function to find scooters.
-2. Clicking on a scooter to explore its details and available options.
-3. Selecting their preferred color to personalize the scooter.
-4. Adding the scooter to their cart and declining additional coverage.
-5. Navigating to the cart to review their selection.
-
-A notable pattern in the user's behavior was their thorough exploration of color options, indicating a desire to customize their selection. Additionally, their decision to decline coverage suggests a calculated consideration of cost versus benefit, or a high confidence in the product's quality. Throughout the flow, the user engaged deeply with the content, as evidenced by multiple scrolls to view more information, showcasing a high level of interest in the product details and a desire to make an informed purchase decision.
+**Generated:** November 09, 2025 at 11:03 AM
 
 ---
 
-## 👆 User Interactions
+## Overview
 
-The following actions were performed during this flow:
+Certainly! Let's break down the arcade flow of adding a scooter to your cart on Target.com.
+
+### What the User Was Trying to Accomplish:
+
+The user aimed to find, customize, and purchase a scooter from Target.com. Their goal was to navigate the website, explore options, and make a selection that best suited their preferences before proceeding to checkout.
+
+### Key Steps Taken:
+
+1. **Initiated Search**: The user started by tapping the search bar to look for scooters, indicating a clear intent to purchase.
+2. **Product Exploration**: They clicked on a scooter image to learn more about it, showing interest in product details and available options.
+3. **Customization**: The user chose their preferred color and explored even more color choices, highlighting a desire for personalization.
+4. **Adding to Cart**: After deciding, they clicked "Add to cart" to reserve the scooter, showing a commitment to purchase.
+5. **Declining Additional Coverage**: The user chose not to add a protection plan, indicating a decision against extra costs or a belief in the product's durability.
+6. **Review and Checkout**: Visiting the cart to review selected items and proceed to checkout shows readiness to finalize the purchase.
+
+### Behavioral Insights:
+
+- **Preference for Personalization**: The user's actions to explore and choose color options suggest a strong preference for personalization in their purchase.
+- **Decision-making Process**: The flow from exploration to adding to the cart indicates a methodical decision-making process, where the user weighs options before making a choice.
+- **Value Sensitivity**: Declining additional coverage could imply sensitivity to price or a calculated decision on the perceived value of the protection plan.
+- **Engagement Level**: The repeated clicks and page views, including scrolling to view more content and dragging an element, demonstrate a high level of engagement and intent to find the right product.
+- **Navigation Efficiency**: The user's ability to navigate from search to checkout, including the use of filters or direct actions like adding to the cart, suggests familiarity with online shopping platforms or intuitive site design facilitating user journey.
+
+In summary, the user demonstrated a clear goal-oriented approach in selecting a scooter on Target.com, with a focus on personalization and value. Their navigation behavior indicates an efficient and engaged shopping experience, likely influenced by both the website's design and the user's comfort with online shopping.
+
+---
+
+## User Interactions
 
 1. **Started section: Add a Scooter to Your Cart on Target.com**
    - _Learn how to browse, customize, and add a Razor scooter to your Target cart for easy checkout._
@@ -42,7 +53,8 @@ The following actions were performed during this flow:
 
 8. **Visit your cart to review your selected items and proceed to checkout.**
 
-9. **Performed an action**
+9. **Clicked on page**
+   - _User performed click interaction_
 
 10. **Typed search query**
    - _User entered text in search field_
@@ -50,47 +62,52 @@ The following actions were performed during this flow:
 11. **Scrolled page to view more content**
    - _User browsed through available options_
 
-12. **Scrolled page to view more content**
+12. **Clicked on page**
+   - _User performed click interaction_
+
+13. **Scrolled page to view more content**
    - _User browsed through available options_
 
----
+14. **Clicked on page**
+   - _User performed click interaction_
 
-## 🎯 Key Insights
+15. **Clicked on page**
+   - _User performed click interaction_
 
-This flow demonstrates a typical e-commerce user journey on Target.com. The user successfully:
+16. **Clicked on page**
+   - _User performed click interaction_
 
-- Navigated to the website and used the search functionality
-- Browsed through product listings to find the right item
-- Viewed product details and explored customization options (colors)
-- Made a purchase decision and added the item to their cart
-- Handled optional add-ons (protection plan)
-- Completed the add-to-cart process
+17. **Clicked on page**
+   - _User performed click interaction_
 
-The flow showcases a smooth, intuitive shopping experience with clear calls-to-action at each step.
+18. **Clicked on page**
+   - _User performed click interaction_
 
----
-
-## 🖼️ Social Media Image
-
-![Flow Social Media Image](./flow_social_media_20251108_232007.png)
-
-*Generated image suitable for sharing on social platforms*
+19. **Dragged element**
+   - _User performed drag interaction_
 
 ---
 
-## 📈 Flow Statistics
+## Key Insights
+
+This flow demonstrates a user journey where the user:
+- Navigated through the interface
+- Interacted with various elements
+- Completed their intended task
+
+The flow showcases an intuitive user experience with clear interactions at each step.
+
+---
+
+## Social Media Image
+
+![Flow Social Media Image](./flow_social_media_20251109_110324.png)
+
+
+## Flow Statistics
 
 - **Total Steps:** 13
-- **User Interactions:** 12
+- **User Interactions:** 19
 - **Flow Type:** promotional
-- **Created With:** extension/1.5.9
 
 ---
-
-## 🔗 Resources
-
-- **Original Flow:** [View on Arcade](https://app.arcade.software/share/2RnSqfsV4EsODmUiPKoW)
-
----
-
-*Report generated by Arcade Flow Analyzer*
